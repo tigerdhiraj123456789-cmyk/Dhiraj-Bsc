@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dhiraj B.Sc</title><style>
+body{margin:0;font-family:Arial;background:#f5f7fb;color:#172033}header{background:#162447;color:white;padding:16px 6%;display:flex;justify-content:space-between;align-items:center}.logo{font-size:23px;font-weight:bold}.btn{border:0;border-radius:10px;padding:11px 17px;background:#ffb703;font-weight:bold;cursor:pointer}.hero{padding:65px 7%;background:linear-gradient(135deg,#162447,#1f5f9c);color:white}.hero h1{font-size:42px}.container{max-width:1000px;margin:auto;padding:40px 20px}.card{background:white;border-radius:16px;padding:24px;margin:15px 0;box-shadow:0 5px 18px #0001}.price{font-size:30px;font-weight:bold;color:#1457a6}.small{color:#64748b;line-height:1.5}.modal{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center}.box{background:white;padding:25px;border-radius:16px;width:min(420px,90%)}input{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;border:1px solid #ccd2dc;border-radius:8px}footer{background:#111827;color:white;text-align:center;padding:25px}</style></head>
+<body><header><div class="logo">Dhiraj B.Sc</div><button class="btn" onclick="auth('login')">Student Login</button></header>
+<section class="hero"><h1>Learn Better with Dhiraj B.Sc</h1><p>Live classes, recorded lectures and study notes for B.Sc students.</p><button class="btn" onclick="document.getElementById('course').scrollIntoView()">View ₹499 Course</button></section>
+<section id="course" class="container"><div class="card"><h2>📚 Complete B.Sc Course</h2><p class="small">Live classes + recorded classes + notes/PDF.</p><div class="price">₹499</div><button class="btn" onclick="enroll()">Enroll for ₹499</button><p id="access" class="small"></p></div>
+<div class="card"><h2>🔴 Live Classes</h2><p class="small">Paid students will get access to live classes after payment verification.</p></div>
+<div class="card"><h2>👨‍🏫 Teachers</h2><p class="small">Multiple teachers can teach under Dhiraj B.Sc admin control.</p></div>
+<div class="card"><h2>👤 My Account</h2><p id="account" class="small">Please log in.</p><button id="logout" class="btn" style="display:none" onclick="logout()">Logout</button></div></section>
+<footer>© 2026 Dhiraj B.Sc • Online Learning Platform</footer>
+<div id="modal" class="modal"><div class="box" id="box"></div></div>
+<script type="module">
+import{createClient}from"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const SUPABASE_URL="PASTE_YOUR_PROJECT_URL_HERE";
+const SUPABASE_PUBLISHABLE_KEY="PASTE_YOUR_PUBLISHABLE_KEY_HERE";
+const configured=!SUPABASE_URL.includes("PASTE_")&&!SUPABASE_PUBLISHABLE_KEY.includes("PASTE_");
+const supabase=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY):null;
+const modal=document.getElementById("modal"),box=document.getElementById("box");
+window.auth=function(mode){box.innerHTML=`<h2>${mode==="login"?"Student Login":"Create Account"}</h2><input id="email" type="email" placeholder="Email"><input id="pass" type="password" placeholder="Password">${mode==="register"?'<input id="name" placeholder="Name">':""}<button class="btn" onclick="submitAuth('${mode}')">${mode==="login"?"Login":"Register"}</button> <button onclick="modal.style.display='none'">Close</button><p id="msg" class="small"></p>`;modal.style.display="flex"};
+window.submitAuth=async function(mode){if(!configured){msg.textContent="Add your Supabase URL and Publishable key in this file first.";return}let r=mode==="login"?await supabase.auth.signInWithPassword({email:email.value,password:pass.value}):await supabase.auth.signUp({email:email.value,password:pass.value,options:{data:{name:(document.getElementById("name")?.value||"")}}});if(r.error)msg.textContent=r.error.message;else{msg.textContent=mode==="login"?"Logged in.":"Account created. Check email if confirmation is enabled.";if(mode==="login"){modal.style.display="none";refresh()}}};
+window.logout=async()=>{await supabase.auth.signOut();refresh()};
+window.enroll=async()=>{if(!configured){auth("register");return}let{data:{user}}=await supabase.auth.getUser();if(!user)auth("login");else alert("Student is logged in. Real ₹499 payment will be connected after secure payment-gateway setup.")};
+async function refresh(){if(!configured)return;let{data:{user}}=await supabase.auth.getUser();account.textContent=user?"Logged in: "+user.email:"Please log in.";logout.style.display=user?"inline-block":"none";if(user){let p=await supabase.from("profiles").select("paid").eq("id",user.id).maybeSingle();access.textContent=p.data?.paid?"Course unlocked 🔓":"Course locked 🔒 — payment required."}}
+refresh();
+</script></body></html>
