@@ -1,24 +1,674 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dhiraj B.Sc</title><style>
-body{margin:0;font-family:Arial;background:#f5f7fb;color:#172033}header{background:#162447;color:white;padding:16px 6%;display:flex;justify-content:space-between;align-items:center}.logo{font-size:23px;font-weight:bold}.btn{border:0;border-radius:10px;padding:11px 17px;background:#ffb703;font-weight:bold;cursor:pointer}.hero{padding:65px 7%;background:linear-gradient(135deg,#162447,#1f5f9c);color:white}.hero h1{font-size:42px}.container{max-width:1000px;margin:auto;padding:40px 20px}.card{background:white;border-radius:16px;padding:24px;margin:15px 0;box-shadow:0 5px 18px #0001}.price{font-size:30px;font-weight:bold;color:#1457a6}.small{color:#64748b;line-height:1.5}.modal{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center}.box{background:white;padding:25px;border-radius:16px;width:min(420px,90%)}input{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;border:1px solid #ccd2dc;border-radius:8px}footer{background:#111827;color:white;text-align:center;padding:25px}</style></head>
-<body><header><div class="logo">Dhiraj B.Sc</div><button class="btn" onclick="auth('login')">Student Login</button></header>
-<section class="hero"><h1>Learn Better with Dhiraj B.Sc</h1><p>Live classes, recorded lectures and study notes for B.Sc students.</p><button class="btn" onclick="document.getElementById('course').scrollIntoView()">View ₹499 Course</button></section>
-<section id="course" class="container"><div class="card"><h2>📚 Complete B.Sc Course</h2><p class="small">Live classes + recorded classes + notes/PDF.</p><div class="price">₹499</div><button class="btn" onclick="enroll()">Enroll for ₹499</button><p id="access" class="small"></p></div>
-<div class="card"><h2>🔴 Live Classes</h2><p class="small">Paid students will get access to live classes after payment verification.</p></div>
-<div class="card"><h2>👨‍🏫 Teachers</h2><p class="small">Multiple teachers can teach under Dhiraj B.Sc admin control.</p></div>
-<div class="card"><h2>👤 My Account</h2><p id="account" class="small">Please log in.</p><button id="logout" class="btn" style="display:none" onclick="logout()">Logout</button></div></section>
-<footer>© 2026 Dhiraj B.Sc • Online Learning Platform</footer>
-<div id="modal" class="modal"><div class="box" id="box"></div></div>
-<script type="module">
-import{createClient}from"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-const SUPABASE_URL="PASTE_YOUR_PROJECT_URL_HERE";
-const SUPABASE_PUBLISHABLE_KEY="PASTE_YOUR_PUBLISHABLE_KEY_HERE";
-const configured=!SUPABASE_URL.includes("PASTE_")&&!SUPABASE_PUBLISHABLE_KEY.includes("PASTE_");
-const supabase=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY):null;
-const modal=document.getElementById("modal"),box=document.getElementById("box");
-window.auth=function(mode){box.innerHTML=`<h2>${mode==="login"?"Student Login":"Create Account"}</h2><input id="email" type="email" placeholder="Email"><input id="pass" type="password" placeholder="Password">${mode==="register"?'<input id="name" placeholder="Name">':""}<button class="btn" onclick="submitAuth('${mode}')">${mode==="login"?"Login":"Register"}</button> <button onclick="modal.style.display='none'">Close</button><p id="msg" class="small"></p>`;modal.style.display="flex"};
-window.submitAuth=async function(mode){if(!configured){msg.textContent="Add your Supabase URL and Publishable key in this file first.";return}let r=mode==="login"?await supabase.auth.signInWithPassword({email:email.value,password:pass.value}):await supabase.auth.signUp({email:email.value,password:pass.value,options:{data:{name:(document.getElementById("name")?.value||"")}}});if(r.error)msg.textContent=r.error.message;else{msg.textContent=mode==="login"?"Logged in.":"Account created. Check email if confirmation is enabled.";if(mode==="login"){modal.style.display="none";refresh()}}};
-window.logout=async()=>{await supabase.auth.signOut();refresh()};
-window.enroll=async()=>{if(!configured){auth("register");return}let{data:{user}}=await supabase.auth.getUser();if(!user)auth("login");else alert("Student is logged in. Real ₹499 payment will be connected after secure payment-gateway setup.")};
-async function refresh(){if(!configured)return;let{data:{user}}=await supabase.auth.getUser();account.textContent=user?"Logged in: "+user.email:"Please log in.";logout.style.display=user?"inline-block":"none";if(user){let p=await supabase.from("profiles").select("paid").eq("id",user.id).maybeSingle();access.textContent=p.data?.paid?"Course unlocked 🔓":"Course locked 🔒 — payment required."}}
-refresh();
-</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dhiraj B.Sc</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+font-family:Arial,sans-serif;
+background:#f4f7fb;
+color:#17213a;
+}
+header{
+background:#08285f;
+color:white;
+padding:16px 6%;
+display:flex;
+justify-content:space-between;
+align-items:center;
+position:sticky;
+top:0;
+z-index:10;
+}
+.logo{font-size:23px;font-weight:bold}
+.logo span{color:#ffc72c}
+button{
+border:0;
+border-radius:10px;
+padding:11px 18px;
+font-weight:bold;
+cursor:pointer;
+}
+.yellow{background:#ffc72c;color:#111}
+.blue{background:#0969d7;color:white}
+.white{background:white;color:#08285f}
+.hero{
+padding:60px 7%;
+background:linear-gradient(135deg,#08285f,#176bb2);
+color:white;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:30px;
+}
+.hero h1{font-size:42px;margin-bottom:15px}
+.hero p{font-size:18px;margin-bottom:22px;line-height:1.6}
+.hero-img{
+font-size:100px;
+background:#ffffff18;
+padding:35px;
+border-radius:25px;
+}
+.container{
+max-width:1100px;
+margin:auto;
+padding:35px 18px 80px;
+}
+.title{
+text-align:center;
+margin-bottom:25px;
+}
+.title h2{font-size:30px;margin-bottom:8px}
+.title p{color:#6b7890}
+.grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:18px;
+}
+.card{
+background:white;
+border-radius:18px;
+padding:20px;
+box-shadow:0 5px 20px #00000012;
+border:1px solid #e3eaf4;
+}
+.course-icon{
+height:140px;
+background:#eaf3ff;
+border-radius:15px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:65px;
+margin-bottom:15px;
+}
+.card h3{margin-bottom:8px}
+.card p{
+color:#69768d;
+line-height:1.5;
+}
+.price{
+font-size:25px;
+font-weight:bold;
+color:#0969d7;
+margin:12px 0;
+}
+.old{
+text-decoration:line-through;
+color:#9ba5b5;
+font-size:14px;
+}
+.features{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:15px;
+margin-top:25px;
+}
+.feature{
+background:white;
+padding:20px;
+text-align:center;
+border-radius:15px;
+box-shadow:0 4px 15px #0000000d;
+}
+.feature-icon{font-size:35px;margin-bottom:10px}
+.login-box{
+max-width:430px;
+margin:40px auto;
+background:white;
+padding:25px;
+border-radius:18px;
+box-shadow:0 5px 25px #0002;
+}
+input{
+width:100%;
+padding:13px;
+margin:8px 0 14px;
+border:1px solid #ccd5e3;
+border-radius:9px;
+font-size:15px;
+}
+.login-box button{width:100%;margin-top:5px}
+.hidden{display:none}
+.back{
+background:#08285f;
+color:white;
+margin-bottom:20px;
+}
+.admin{
+display:grid;
+grid-template-columns:210px 1fr;
+gap:0;
+background:white;
+border-radius:18px;
+overflow:hidden;
+box-shadow:0 5px 20px #0001;
+}
+.sidebar{
+background:#08285f;
+padding:15px;
+color:white;
+}
+.sidebar h3{padding:15px 5px}
+.sidebar button{
+width:100%;
+text-align:left;
+background:transparent;
+color:white;
+margin:3px 0;
+}
+.sidebar button:hover{background:#1457a6}
+.dashboard{padding:25px}
+.stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:15px;
+margin:20px 0;
+}
+.stat{
+background:#eef5ff;
+padding:20px;
+border-radius:15px;
+}
+.stat b{
+display:block;
+font-size:27px;
+margin-top:8px;
+}
+.live{
+background:linear-gradient(135deg,#fff,#edf5ff);
+}
+.live-badge{
+display:inline-block;
+background:#e83e55;
+color:white;
+padding:6px 10px;
+border-radius:20px;
+font-size:12px;
+font-weight:bold;
+margin-bottom:10px;
+}
+footer{
+background:#111827;
+color:white;
+text-align:center;
+padding:25px;
+}
+.modal{
+display:none;
+position:fixed;
+inset:0;
+background:#0008;
+align-items:center;
+justify-content:center;
+z-index:50;
+}
+.modal-box{
+background:white;
+padding:25px;
+border-radius:18px;
+width:min(420px,90%);
+}
+.close{
+float:right;
+background:#eee;
+}
+@media(max-width:800px){
+.hero{flex-direction:column;text-align:center}
+.grid{grid-template-columns:1fr 1fr}
+.features{grid-template-columns:1fr 1fr}
+.admin{grid-template-columns:1fr}
+.stats{grid-template-columns:1fr}
+}
+@media(max-width:500px){
+.hero h1{font-size:31px}
+.grid{grid-template-columns:1fr}
+.features{grid-template-columns:1fr 1fr}
+.hero-img{font-size:65px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="logo">Dhiraj <span>B.Sc</span></div>
+<button class="yellow" onclick="openLogin()">Student Login</button>
+</header>
+
+<section class="hero">
+<div>
+<h1>Learn Better.<br>Achieve Bigger.</h1>
+<p>
+Live classes, recorded lectures, handwritten notes
+and complete B.Sc study material — all in one place.
+</p>
+<button class="yellow" onclick="courses()">Explore Courses</button>
+</div>
+
+<div class="hero-img">🎓📚</div>
+</section>
+
+<section class="container" id="courseSection">
+
+<div class="title">
+<h2>Popular Courses</h2>
+<p>Choose your semester and start learning</p>
+</div>
+
+<div class="grid">
+
+<div class="card">
+<div class="course-icon">🫀</div>
+<h3>B.Sc 1st Semester</h3>
+<p>Anatomy • Physiology • Psychology</p>
+<div class="price">₹499 <span class="old">₹999</span></div>
+<button class="blue" onclick="buy('B.Sc 1st Semester')">Buy Course</button>
+</div>
+
+<div class="card">
+<div class="course-icon">🧬</div>
+<h3>B.Sc 2nd Semester</h3>
+<p>Biochemistry • Nutrition • Nursing</p>
+<div class="price">₹499 <span class="old">₹999</span></div>
+<button class="blue" onclick="buy('B.Sc 2nd Semester')">Buy Course</button>
+</div>
+
+<div class="card">
+<div class="course-icon">🦠</div>
+<h3>B.Sc 3rd Semester</h3>
+<p>Microbiology • Pathology • Pharmacology</p>
+<div class="price">₹499 <span class="old">₹999</span></div>
+<button class="blue" onclick="buy('B.Sc 3rd Semester')">Buy Course</button>
+</div>
+
+<div class="card">
+<div class="course-icon">👥</div>
+<h3>B.Sc 4th Semester</h3>
+<p>Advanced Nursing & Medical Subjects</p>
+<div class="price">₹499 <span class="old">₹999</span></div>
+<button class="blue" onclick="buy('B.Sc 4th Semester')">Buy Course</button>
+</div>
+
+<div class="card">
+<div class="course-icon">🧠</div>
+<h3>B.Sc 5th Semester</h3>
+<p>Advanced Clinical Studies</p>
+<div class="price">₹499 <span class="old">₹999</span></div>
+<button class="blue" onclick="buy('B.Sc 5th Semester')">Buy Course</button>
+</div>
+
+<div class="card">
+<div class="course-icon">💊</div>
+<h3>B.Sc 6th Semester</h3>
+<p>Final Semester Complete Preparation</p>
+<div class="price">₹499 <span class="old">₹999</span></div>
+<button class="blue" onclick="buy('B.Sc 6th Semester')">Buy Course</button>
+</div>
+
+</div>
+
+<div class="title" style="margin-top:55px">
+<h2>Everything You Need</h2>
+<p>Complete learning platform for students</p>
+</div>
+
+<div class="features">
+
+<div class="feature">
+<div class="feature-icon">🔴</div>
+<h3>Live Classes</h3>
+<p>Join teacher's live classes.</p>
+</div>
+
+<div class="feature">
+<div class="feature-icon">▶️</div>
+<h3>Recorded Classes</h3>
+<p>Watch lectures anytime.</p>
+</div>
+
+<div class="feature">
+<div class="feature-icon">📄</div>
+<h3>Notes & PDFs</h3>
+<p>Download study material.</p>
+</div>
+
+<div class="feature">
+<div class="feature-icon">👨‍🏫</div>
+<h3>Expert Teachers</h3>
+<p>Learn from multiple teachers.</p>
+</div>
+
+</div>
+
+<div class="card live" style="margin-top:25px">
+<span class="live-badge">● LIVE NOW</span>
+<h2>Human Heart — Anatomy</h2>
+<p>Live class is currently available for enrolled students.</p>
+<br>
+<button class="blue" onclick="alert('Please login and purchase the course to join the live class.')">
+Join Live Class
+</button>
+</div>
+
+</section>
+
+<section class="container hidden" id="loginSection">
+
+<button class="back" onclick="home()">← Back</button>
+
+<div class="login-box">
+
+<h2>Student Login</h2>
+<p style="color:#69768d;margin:8px 0 18px">
+Login to access your courses
+</p>
+
+<label>Email</label>
+<input id="email" type="email" placeholder="Enter email">
+
+<label>Password</label>
+<input id="password" type="password" placeholder="Enter password">
+
+<button class="blue" onclick="login()">Login</button>
+
+<p style="text-align:center;margin-top:18px">
+New student?
+<a href="#" onclick="signup()">Create Account</a>
+</p>
+
+</div>
+</section>
+
+<section class="container hidden" id="buySection">
+
+<button class="back" onclick="home()">← Back</button>
+
+<div class="login-box">
+
+<div style="text-align:center;font-size:60px">🎓</div>
+
+<h2 id="selectedCourse">Complete B.Sc Course</h2>
+
+<p style="color:#69768d;margin:12px 0">
+Live Classes + Recorded Lectures + Notes + PDFs
+</p>
+
+<div class="price">₹499</div>
+
+<hr style="border:0;border-top:1px solid #ddd;margin:20px 0">
+
+<h3>Select Payment Method</h3>
+
+<br>
+
+<button class="white" style="width:100%;border:1px solid #ddd;margin-bottom:10px">
+📱 UPI — Google Pay / PhonePe / Paytm
+</button>
+
+<button class="white" style="width:100%;border:1px solid #ddd;margin-bottom:10px">
+💳 Debit / Credit Card
+</button>
+
+<button class="white" style="width:100%;border:1px solid #ddd;margin-bottom:15px">
+🏦 Net Banking
+</button>
+
+<button class="blue" style="width:100%" onclick="payment()">
+Proceed to Pay ₹499
+</button>
+
+<p style="font-size:12px;color:#777;margin-top:12px">
+Secure payment gateway will be connected here.
+</p>
+
+</div>
+</section>
+
+<section class="container hidden" id="successSection">
+
+<div class="login-box" style="text-align:center">
+
+<div style="font-size:80px">✅</div>
+
+<h1>Payment Successful!</h1>
+
+<h2 style="color:#0969d7;margin:15px">₹499</h2>
+
+<p style="color:#69768d">
+Your course has been activated successfully.
+</p>
+
+<br>
+
+<button class="blue" onclick="home()">
+Go to My Courses
+</button>
+
+</div>
+
+</section>
+
+<section class="container hidden" id="profileSection">
+
+<button class="back" onclick="home()">← Back</button>
+
+<div class="card">
+
+<h2>👤 My Profile</h2>
+
+<br>
+
+<h3 id="studentName">Dhiraj Singh</h3>
+
+<p>Student Account</p>
+
+<hr style="margin:20px 0;border:0;border-top:1px solid #ddd">
+
+<button class="white" style="width:100%;text-align:left;border:1px solid #ddd;margin-bottom:10px">
+📚 My Courses
+</button>
+
+<button class="white" style="width:100%;text-align:left;border:1px solid #ddd;margin-bottom:10px">
+💳 Payment History
+</button>
+
+<button class="white" style="width:100%;text-align:left;border:1px solid #ddd">
+🔔 Notifications
+</button>
+
+</div>
+
+</section>
+
+<section class="container hidden" id="adminSection">
+
+<button class="back" onclick="home()">← Back</button>
+
+<div class="admin">
+
+<div class="sidebar">
+
+<h3>Dhiraj B.Sc</h3>
+
+<button>📊 Dashboard</button>
+<button>🔴 Live Class</button>
+<button>📚 Courses</button>
+<button>👥 Students</button>
+<button>💰 Payments</button>
+<button>📄 Notes / PDFs</button>
+<button>▶️ Recorded Lectures</button>
+<button>🔔 Notifications</button>
+<button>⚙️ Settings</button>
+
+</div>
+
+<div class="dashboard">
+
+<h2>Admin Dashboard</h2>
+
+<div class="stats">
+
+<div class="stat">
+👥 Students
+<b>248</b>
+</div>
+
+<div class="stat">
+📚 Courses
+<b>6</b>
+</div>
+
+<div class="stat">
+💰 Earnings
+<b>₹78,500</b>
+</div>
+
+</div>
+
+<h3>Recent Payments</h3>
+
+<br>
+
+<div class="card">
+Riya Sharma
+<span style="float:right">₹499</span>
+</div>
+
+<div class="card">
+Aman Kumar
+<span style="float:right">₹499</span>
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<footer>
+© 2026 Dhiraj B.Sc
+<br>
+Learn • Grow • Succeed
+</footer>
+
+<div class="modal" id="modal">
+
+<div class="modal-box">
+
+<button class="close" onclick="closeModal()">✕</button>
+
+<h2>Student Account</h2>
+
+<br>
+
+<input placeholder="Full Name">
+
+<input placeholder="Email">
+
+<input type="password" placeholder="Password">
+
+<button class="blue" style="width:100%" onclick="closeModal()">
+Create Account
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+function hideAll(){
+
+document.querySelectorAll(
+'#courseSection,#loginSection,#buySection,#successSection,#profileSection,#adminSection'
+).forEach(x=>x.classList.add('hidden'));
+
+}
+
+function home(){
+
+hideAll();
+
+document.getElementById('courseSection')
+.classList.remove('hidden');
+
+window.scrollTo(0,0);
+
+}
+
+function courses(){
+
+hideAll();
+
+document.getElementById('courseSection')
+.classList.remove('hidden');
+
+document.getElementById('courseSection')
+.scrollIntoView();
+
+}
+
+function openLogin(){
+
+hideAll();
+
+document.getElementById('loginSection')
+.classList.remove('hidden');
+
+window.scrollTo(0,0);
+
+}
+
+function signup(){
+
+document.getElementById('modal')
+.style.display='flex';
+
+}
+
+function closeModal(){
+
+document.getElementById('modal')
+.style.display='none';
+
+}
+
+function login(){
+
+alert('Login screen ready. Real Supabase login will be connected next.');
+
+}
+
+function buy(course){
+
+hideAll();
+
+document.getElementById('buySection')
+.classList.remove('hidden');
+
+document.getElementById('selectedCourse')
+.innerText=course;
+
+window.scrollTo(0,0);
+
+}
+
+function payment(){
+
+hideAll();
+
+document.getElementById('successSection')
+.classList.remove('hidden');
+
+window.scrollTo(0,0);
+
+}
+
+</script>
+
+</body>
+</html>
