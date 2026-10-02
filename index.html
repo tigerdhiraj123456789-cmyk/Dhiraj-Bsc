@@ -52,5 +52,6 @@ async function saveAdminContent(){if(!currentUser||!currentProfile||currentProfi
 sb.auth.onAuthStateChange(()=>setTimeout(loadSession,0));
 (async()=>{await loadSession();await loadContent()})();
 </script>
+<script src="site-enhancements.js"></script>
 </body>
 </html>
