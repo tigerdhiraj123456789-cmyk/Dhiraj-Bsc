@@ -45,6 +45,22 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute procedure public.handle_new_user();
 
+-- If the first account was created before this setup was run,
+-- promote the earliest existing profile to admin when no admin exists.
+do $$
+begin
+  if exists (select 1 from public.profiles)
+     and not exists (select 1 from public.profiles where role = 'admin') then
+    update public.profiles
+    set role = 'admin'
+    where id = (
+      select id from public.profiles
+      order by created_at asc
+      limit 1
+    );
+  end if;
+end $$;
+
 alter table public.profiles enable row level security;
 alter table public.site_content enable row level security;
 
