@@ -16,12 +16,22 @@ create table if not exists public.site_content (
   recording_title text not null default 'Recorded Class',
   recording_url text not null default '',
   notes_url text not null default '',
+  courses jsonb not null default '[{"id":"course-1","title":"B.Sc 1st Semester","description":"Anatomy • Physiology • Psychology","icon":"🫀","visible":true}]'::jsonb,
   updated_at timestamptz not null default now()
 );
+
+-- Existing site_content tables get the new course-control column safely.
+alter table public.site_content
+  add column if not exists courses jsonb not null default '[{"id":"course-1","title":"B.Sc 1st Semester","description":"Anatomy • Physiology • Psychology","icon":"🫀","visible":true}]'::jsonb;
 
 insert into public.site_content (id)
 values (1)
 on conflict (id) do nothing;
+
+-- Keep the initial homepage simple: only B.Sc 1st Semester is visible.
+update public.site_content
+set courses = '[{"id":"course-1","title":"B.Sc 1st Semester","description":"Anatomy • Physiology • Psychology","icon":"🫀","visible":true}]'::jsonb
+where id = 1 and (courses is null or jsonb_array_length(courses) = 0);
 
 -- First account created becomes the admin. Later accounts are students.
 create or replace function public.handle_new_user()
