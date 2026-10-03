@@ -1,9 +1,8 @@
-/* Dhiraj B.Sc — safe content enhancements */
+/* Dhiraj B.Sc — session refresh fix */
 (function(){
   var originalShow = window.show;
   var ready = false;
 
-  /* Block the old load-handler from showing Student Login while Supabase restores the saved session. */
   window.show = function(id){
     if(id === 'loginSection' && !ready) return;
     return originalShow(id);
@@ -14,20 +13,15 @@
     try{
       await loadSession();
       ready = true;
+      /* On refresh, always return to Home. Keep the Supabase session active. */
       if(typeof currentUser !== 'undefined' && currentUser){
-        if(typeof currentProfile !== 'undefined' && currentProfile && currentProfile.role === 'admin'){
-          originalShow('adminSection');
-          if(typeof loadAdmin === 'function') await loadAdmin();
-        }else{
-          originalShow('accountSection');
-          var e=document.getElementById('accountEmail');
-          if(e) e.textContent=currentUser.email || '';
-        }
+        home();
       }else{
         home();
       }
     }catch(e){
       ready = true;
+      home();
     }
   }
 
