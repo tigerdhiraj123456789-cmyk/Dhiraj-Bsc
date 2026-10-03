@@ -59,9 +59,16 @@
   async function loadCourses() {
     courses = DEFAULT_COURSES.slice();
     try {
+      var savedLocal = localStorage.getItem('dhiraj_bsc_courses');
+      if (savedLocal) courses = normalize(JSON.parse(savedLocal));
+    } catch (e) {}
+    try {
       if (typeof sb === 'undefined') return renderCourses();
       var r = await sb.from('site_content').select('courses').eq('id', 1).maybeSingle();
-      if (!r.error && r.data && r.data.courses) courses = normalize(r.data.courses);
+      if (!r.error && r.data && r.data.courses) {
+        courses = normalize(r.data.courses);
+        try { localStorage.setItem('dhiraj_bsc_courses', JSON.stringify(courses)); } catch (e) {}
+      }
     } catch (e) {}
     renderCourses();
   }
@@ -166,11 +173,20 @@
       return { id: String(c.id || ('course-' + i)), title: String(c.title).trim(), description: String(c.description || '').trim(), icon: String(c.icon || '📚').trim(), visible: c.visible !== false };
     }).filter(function (c) { return c.title; });
     if (!clean.length) return alert('Kam se kam 1 course rakhiye.');
+    try { localStorage.setItem('dhiraj_bsc_courses', JSON.stringify(clean)); } catch (e) {}
     var r = await sb.from('site_content').upsert({ id: 1, courses: clean }, { onConflict: 'id' });
-    if (r.error) return alert(r.error.message + '\n\nSupabase SQL me courses column add hona chahiye.');
+    var msg = document.getElementById('courseSaveMsg');
+    if (r.error) {
+      if (String(r.error.message || '').toLowerCase().indexOf('courses') !== -1) {
+        courses = clean;
+        renderCourses();
+        if (msg) { msg.textContent = 'Saved on this device ✓ (Supabase column pending)'; setTimeout(function () { msg.textContent = ''; }, 3500); }
+        return;
+      }
+      return alert(r.error.message);
+    }
     courses = clean;
     renderCourses();
-    var msg = document.getElementById('courseSaveMsg');
     if (msg) { msg.textContent = 'Saved ✓'; setTimeout(function () { msg.textContent = ''; }, 2500); }
   }
 
