@@ -10,16 +10,26 @@
   function addPanel(){var dash=document.querySelector('#adminSection .dashboard');if(!dash||document.getElementById('adminEnhancedBox'))return;var box=document.createElement('div');box.id='adminEnhancedBox';box.innerHTML='<h3>👨‍🏫 Teacher & Multiple Content</h3>';dash.appendChild(box)}
   function removeStudentBack(){var btn=document.querySelector('#loginSection .back');if(btn)btn.remove()}
   function restoreLoggedInPage(){
-    if(typeof currentUser==='undefined'||!currentUser)return;
-    if(currentProfile&&currentProfile.role==='admin'){
-      if(document.getElementById('adminSection')&&!document.getElementById('adminSection').classList.contains('hidden'))return;
-      show('adminSection');
-      if(typeof loadAdmin==='function')loadAdmin();
-    }else{
-      if(document.getElementById('accountSection')&&!document.getElementById('accountSection').classList.contains('hidden'))return;
-      show('accountSection');
-      var e=document.getElementById('accountEmail');if(e&&currentUser.email)e.textContent=currentUser.email;
-    }
+    if(!client)return;
+    client.auth.getSession().then(function(res){
+      var user=res&&res.data&&res.data.session&&res.data.session.user;
+      if(!user)return;
+      client.from('profiles').select('full_name,role').eq('id',user.id).maybeSingle().then(function(p){
+        var role=p&&p.data&&p.data.role;
+        /* Do not let the old load-event redirect send a logged-in user back to Login. */
+        if(role==='admin'){
+          if(typeof currentUser!=='undefined'){currentUser=user;currentProfile=p.data||null;}
+          if(typeof updateHeader==='function')updateHeader();
+          if(typeof show==='function')show('adminSection');
+          if(typeof loadAdmin==='function')loadAdmin();
+        }else{
+          if(typeof currentUser!=='undefined'){currentUser=user;currentProfile=p.data||null;}
+          if(typeof updateHeader==='function')updateHeader();
+          if(typeof show==='function')show('accountSection');
+          var e=document.getElementById('accountEmail');if(e)e.textContent=user.email||'';
+        }
+      });
+    });
   }
   function boot(){
     var style=document.createElement('style');
@@ -29,8 +39,7 @@
     setTimeout(removeStudentBack,100);setTimeout(removeStudentBack,500);setTimeout(removeStudentBack,1000);setTimeout(removeStudentBack,2000);
     var observer=new MutationObserver(removeStudentBack);observer.observe(document.body,{childList:true,subtree:true});
     setTimeout(refreshEnhanced,700);setTimeout(addPanel,700);
-    /* Keep an already logged-in student/admin logged in after page refresh. */
-    setTimeout(restoreLoggedInPage,1200);setTimeout(restoreLoggedInPage,2200);setTimeout(restoreLoggedInPage,3500);
+    setTimeout(restoreLoggedInPage,700);setTimeout(restoreLoggedInPage,1600);setTimeout(restoreLoggedInPage,3000);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
