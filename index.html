@@ -30,4 +30,5 @@ async function logout(){await sb.auth.signOut();currentUser=null;currentProfile=
 sb.auth.onAuthStateChange(()=>setTimeout(loadSession,0));
 (async()=>{await loadSession();home()})();
 </script>
+<script src="site-enhancements.js"></script>
 </body></html>
