@@ -1,151 +1,59 @@
-/* Dhiraj B.Sc navigation fix
-   - First visit opens Student Login.
-   - Refresh keeps the page currently open in this tab.
-   - My Account has a Home button.
-   - Login has NO back button.
-   - Course/Admin/Signup are also restored after refresh.
-   - No # hash is used.
-*/
-(function () {
-  if (window.__dhirajNavigationLoaded) return;
-  window.__dhirajNavigationLoaded = true;
-
-  var KEY = 'dhiraj_bsc_current_page_v2';
-  var TITLE_KEY = 'dhiraj_bsc_course_title_v2';
-  var pages = ['loginSection','signupSection','accountSection','courseSection','adminSection'];
-  var restoring = true;
-
-  function getPage() {
-    try { return sessionStorage.getItem(KEY); } catch (e) { return null; }
+/* Dhiraj B.Sc navigation */
+(function(){
+  if(window.__dhirajNavigationLoaded)return;
+  window.__dhirajNavigationLoaded=true;
+  var PAGE='dhiraj_page_v5', COURSE='dhiraj_course_v5';
+  var pages=['loginSection','signupSection','accountSection','courseSection','adminSection'];
+  function get(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}}
+  function del(k){try{sessionStorage.removeItem(k)}catch(e){}}
+  function hide(){
+    var h=document.getElementById('homeHero'),m=document.getElementById('homeMain');
+    if(h)h.classList.add('hidden'); if(m)m.classList.add('hidden');
+    pages.forEach(function(id){var e=document.getElementById(id);if(e)e.classList.add('hidden')});
   }
-  function setPage(page) {
-    try { sessionStorage.setItem(KEY, page); } catch (e) {}
-  }
-  function getTitle() {
-    try { return sessionStorage.getItem(TITLE_KEY) || 'Course'; } catch (e) { return 'Course'; }
-  }
-  function setTitle(title) {
-    try { sessionStorage.setItem(TITLE_KEY, title); } catch (e) {}
-  }
-
-  function hideAll() {
-    var hero = document.getElementById('homeHero');
-    var main = document.getElementById('homeMain');
-    if (hero) hero.classList.add('hidden');
-    if (main) main.classList.add('hidden');
-    pages.forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.classList.add('hidden');
-    });
-  }
-
-  function showPage(page, save) {
-    if (page === 'home') {
-      var hero = document.getElementById('homeHero');
-      var main = document.getElementById('homeMain');
-      pages.forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) el.classList.add('hidden');
-      });
-      if (hero) hero.classList.remove('hidden');
-      if (main) main.classList.remove('hidden');
-      if (save) setPage('home');
-      window.scrollTo(0, 0);
-      return;
+  function showPage(id,save){
+    hide();
+    if(id==='home'){
+      var h=document.getElementById('homeHero'),m=document.getElementById('homeMain');
+      if(h)h.classList.remove('hidden');if(m)m.classList.remove('hidden');
+    }else{var e=document.getElementById(id);if(e)e.classList.remove('hidden')}
+    if(id==='courseSection'){
+      var c=document.getElementById('courseHeading'),t=get(COURSE);if(c&&t)c.textContent=t;
     }
-    hideAll();
-    var el = document.getElementById(page);
-    if (el) el.classList.remove('hidden');
-    if (save) setPage(page);
-    window.scrollTo(0, 0);
+    if(save)set(PAGE,id);
+    window.scrollTo(0,0);addHome();removeLoginBack();
   }
-
-  function addAccountHomeButton() {
-    var section = document.getElementById('accountSection');
-    if (!section || section.querySelector('.dhiraj-home-btn')) return;
-    var card = section.querySelector('.card');
-    if (!card) return;
-    var btn = document.createElement('button');
-    btn.className = 'blue dhiraj-home-btn';
-    btn.textContent = '← Home';
-    btn.style.marginBottom = '16px';
-    btn.onclick = function () { showPage('home', true); };
-    card.insertBefore(btn, card.firstChild);
+  function nav(id){
+    var old=get(PAGE);
+    if(old&&old!==id)try{history.pushState({page:id},'',location.pathname)}catch(e){}
+    showPage(id,true);
   }
-
-  function removeLoginBackButtons() {
-    var login = document.getElementById('loginSection');
-    if (!login) return;
-    Array.prototype.slice.call(login.querySelectorAll('button')).forEach(function (btn) {
-      if (/back|←/i.test((btn.textContent || '').trim())) btn.remove();
-    });
+  function addHome(){
+    var s=document.getElementById('accountSection');if(!s)return;
+    var c=s.querySelector('.card');if(!c||c.querySelector('.dhiraj-home'))return;
+    var b=document.createElement('button');b.type='button';b.className='blue dhiraj-home';b.textContent='← Home';b.style.marginBottom='16px';b.onclick=function(){nav('home')};c.insertBefore(b,c.firstChild);
   }
-
-  function patchFunctions() {
-    if (typeof window.show === 'function' && !window.__dhirajShowPatched) {
-      var oldShow = window.show;
-      window.show = function (id) {
-        oldShow(id);
-        showPage(id, true);
-        addAccountHomeButton();
-        removeLoginBackButtons();
-      };
-      window.__dhirajShowPatched = true;
-    }
-
-    if (typeof window.home === 'function' && !window.__dhirajHomePatched) {
-      var oldHome = window.home;
-      window.home = function () {
-        oldHome();
-        showPage('home', true);
-      };
-      window.__dhirajHomePatched = true;
-    }
-
-    if (typeof window.openCourse === 'function' && !window.__dhirajCoursePatched) {
-      var oldCourse = window.openCourse;
-      window.openCourse = function (name) {
-        setTitle(name);
-        oldCourse(name);
-        showPage('courseSection', true);
-      };
-      window.__dhirajCoursePatched = true;
-    }
+  function removeLoginBack(){
+    var s=document.getElementById('loginSection');if(!s)return;
+    Array.prototype.slice.call(s.querySelectorAll('button')).forEach(function(b){var t=(b.textContent||'').toLowerCase();if(t.indexOf('back')>=0||t.indexOf('←')>=0)b.remove()});
   }
-
-  function restore() {
-    patchFunctions();
-    addAccountHomeButton();
-    removeLoginBackButtons();
-
-    var saved = getPage();
-    if (!saved) {
-      // Required first-open behavior: website opens at Student Login.
-      showPage('loginSection', true);
-      restoring = false;
-      return;
-    }
-
-    if (saved === 'courseSection') {
-      var heading = document.getElementById('courseHeading');
-      if (heading) heading.textContent = getTitle();
-    }
-    showPage(saved, false);
-    addAccountHomeButton();
-    removeLoginBackButtons();
-    restoring = false;
+  function patch(){
+    if(typeof window.show==='function'&&!window.__show5){var f=window.show;window.show=function(id){f(id);nav(id)};window.__show5=true}
+    if(typeof window.home==='function'&&!window.__home5){var f2=window.home;window.home=function(){f2();nav('home')};window.__home5=true}
+    if(typeof window.openCourse==='function'&&!window.__course5){var f3=window.openCourse;window.openCourse=function(n){set(COURSE,n);f3(n);nav('courseSection')};window.__course5=true}
   }
-
-  // Browser/phone back button: return to previous in-app page without adding hashes.
-  window.addEventListener('popstate', function () {
-    var saved = getPage() || 'loginSection';
-    showPage(saved, false);
-  });
-
-  // Make refresh-safe state available before/after the original page script finishes.
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(restore, 0); });
-  } else {
-    setTimeout(restore, 0);
+  function start(){
+    patch();
+    var navEntry=null;try{navEntry=performance.getEntriesByType('navigation')[0]}catch(e){}
+    var reload=navEntry&&navEntry.type==='reload';
+    var saved=get(PAGE);
+    /* New/direct opening = Login. Reload = restore current page. */
+    if(!reload){del(PAGE);del(COURSE);showPage('loginSection',true);try{history.replaceState({page:'loginSection'},'',location.pathname)}catch(e){}}
+    else if(saved&&(saved==='home'||pages.indexOf(saved)>=0))showPage(saved,false);
+    else showPage('loginSection',true);
+    addHome();removeLoginBack();
   }
+  window.addEventListener('popstate',function(){showPage(get(PAGE)||'loginSection',false)});
+  setTimeout(start,150);
 })();
