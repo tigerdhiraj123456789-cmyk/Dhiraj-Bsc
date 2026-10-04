@@ -1,23 +1,30 @@
-/* Dhiraj B.Sc navigation v9 - URL state, no hash */
+/* Dhiraj B.Sc - final navigation + course control */
 (function(){
-  if(window.__dhirajNavigationV9)return;
-  window.__dhirajNavigationV9=true;
-  const pages=['loginSection','signupSection','accountSection','courseSection','adminSection'];
-  const valid=new Set(pages);
-  function currentPage(){try{const p=new URLSearchParams(location.search).get('page');return valid.has(p)?p:'loginSection'}catch(e){return 'loginSection'}}
-  function currentCourse(){try{return new URLSearchParams(location.search).get('course')||''}catch(e){return ''}}
-  function writeUrl(page,course,replace){const u=new URL(location.href);u.searchParams.set('page',page);if(page==='courseSection'&&course)u.searchParams.set('course',course);else u.searchParams.delete('course');try{(replace?history.replaceState:history.pushState).call(history,{page,course:course||''},'',u.pathname+'?'+u.searchParams.toString())}catch(e){}}
-  function hideAll(){['homeHero','homeMain'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add('hidden')});pages.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add('hidden')})}
-  function addHome(){const s=document.getElementById('accountSection');if(!s)return;const card=s.querySelector('.card');if(!card||card.querySelector('.dhiraj-home-v9'))return;const b=document.createElement('button');b.type='button';b.className='blue dhiraj-home-v9';b.textContent='← Home';b.style.marginBottom='16px';b.onclick=function(){writeUrl('loginSection','',false);render('loginSection')};card.insertBefore(b,card.firstChild)}
-  function noLoginBack(){const s=document.getElementById('loginSection');if(!s)return;s.querySelectorAll('button').forEach(b=>{const t=(b.textContent||'').trim().toLowerCase();if(t.includes('back')||t.startsWith('←'))b.remove()})}
-  function render(page){hideAll();if(page==='accountSection'){document.getElementById('accountSection')?.classList.remove('hidden');const e=document.getElementById('accountEmail');if(e&&window.currentUser)e.textContent=window.currentUser.email||'';addHome()}else if(page==='courseSection'){document.getElementById('courseSection')?.classList.remove('hidden');const h=document.getElementById('courseHeading'),c=currentCourse();if(h&&c)h.textContent=c}else{document.getElementById(page)?.classList.remove('hidden')}noLoginBack();window.scrollTo(0,0)}
-  function patch(){
-    if(typeof window.show==='function'&&!window.__showV9){const old=window.show;window.show=function(id){old(id);writeUrl(id,'',false);render(id)};window.__showV9=true}
-    if(typeof window.home==='function'&&!window.__homeV9){const old=window.home;window.home=function(){old();writeUrl('loginSection','',false);render('loginSection')};window.__homeV9=true}
-    if(typeof window.openCourse==='function'&&!window.__courseV9){const old=window.openCourse;window.openCourse=function(name){old(name);writeUrl('courseSection',name,false);render('courseSection')};window.__courseV9=true}
-  }
-  function start(){patch();render(currentPage())}
-  window.addEventListener('popstate',function(){patch();render(currentPage())});
-  window.addEventListener('pageshow',function(){setTimeout(function(){patch();render(currentPage())},100)});
-  setTimeout(start,400);
+ if(window.__DHIRAJ_FINAL__)return; window.__DHIRAJ_FINAL__=true;
+ const pages=['loginSection','signupSection','accountSection','courseSection','adminSection'];
+ const CKEY='dhiraj_courses_final';
+ const defaults=[
+  {name:'B.Sc 1st Semester',subjects:'Anatomy • Physiology • Psychology',icon:'🫀',visible:true},
+  {name:'B.Sc 2nd Semester',subjects:'Biochemistry • Nutrition • Nursing',icon:'🧬',visible:false},
+  {name:'B.Sc 3rd Semester',subjects:'Microbiology • Pathology • Pharmacology',icon:'🦠',visible:false},
+  {name:'B.Sc 4th Semester',subjects:'Advanced Nursing & Medical Subjects',icon:'👥',visible:false},
+  {name:'B.Sc 5th Semester',subjects:'Advanced Clinical Studies',icon:'🧠',visible:false},
+  {name:'B.Sc 6th Semester',subjects:'Final Semester Complete Preparation',icon:'💊',visible:false}
+ ];
+ const $=id=>document.getElementById(id);
+ function courses(){try{const x=JSON.parse(localStorage.getItem(CKEY));return Array.isArray(x)&&x.length?x:defaults.map(x=>({...x}))}catch(e){return defaults.map(x=>({...x}))}}
+ function saveLocal(c){try{localStorage.setItem(CKEY,JSON.stringify(c))}catch(e){}}
+ function applyCourses(c){document.querySelectorAll('#courses .grid>.card').forEach((card,i)=>{const x=c[i];if(!x)return;card.style.display=x.visible?'':'none';card.querySelector('h3').textContent=x.name;card.querySelector('p').textContent=x.subjects;card.querySelector('.course-icon').textContent=x.icon})}
+ async function loadCourses(){let c=courses();try{if(window.sb){const r=await window.sb.from('site_content').select('courses').eq('id',1).maybeSingle();if(r.data&&Array.isArray(r.data.courses)){c=r.data.courses;saveLocal(c)}}}catch(e){}applyCourses(c);return c}
+ function renderCourseControl(){const d=document.querySelector('#adminSection .dashboard');if(!d||d.querySelector('.dhirajCourseControl'))return;const box=document.createElement('div');box.className='dhirajCourseControl';box.style.marginTop='28px';box.innerHTML='<hr style="margin:25px 0;border:0;border-top:1px solid #ddd"><h3>📚 Course Control</h3><p class="small muted">Home par abhi sirf 1st Semester visible hai. Yahin se semester Show/Hide aur details edit karein.</p><div id="dhirajCourseRows"></div><button class="blue" id="dhirajSaveCourses">💾 Save Courses</button> <span id="dhirajCourseMsg" class="muted"></span>';d.appendChild(box);drawRows();$('dhirajSaveCourses').onclick=saveCourses}
+ function drawRows(){const w=$('dhirajCourseRows');if(!w)return;w.innerHTML='';courses().forEach((x,i)=>{const r=document.createElement('div');r.style.cssText='border:1px solid #dbe2ed;border-radius:12px;padding:12px;margin:8px 0;background:#fafcff';r.innerHTML='<label><input type="checkbox" data-show="'+i+'" '+(x.visible?'checked':'')+' style="width:auto;margin-right:7px"> Show on Home</label><input data-name="'+i+'" value="'+String(x.name).replace(/"/g,'&quot;')+'" placeholder="Course name"><input data-sub="'+i+'" value="'+String(x.subjects).replace(/"/g,'&quot;')+'" placeholder="Subjects"><input data-icon="'+i+'" value="'+String(x.icon).replace(/"/g,'&quot;')+'" placeholder="Icon">';w.appendChild(r)})}
+ async function saveCourses(){const c=courses();c.forEach((x,i)=>{x.visible=!!document.querySelector('[data-show="'+i+'"]')?.checked;x.name=document.querySelector('[data-name="'+i+'"]')?.value.trim()||x.name;x.subjects=document.querySelector('[data-sub="'+i+'"]')?.value.trim()||x.subjects;x.icon=document.querySelector('[data-icon="'+i+'"]')?.value.trim()||x.icon});saveLocal(c);applyCourses(c);try{if(window.sb){const r=await window.sb.from('site_content').upsert({id:1,courses:c},{onConflict:'id'});if(r.error)throw r.error}}catch(e){alert('Course save error: '+(e.message||e));return}$('dhirajCourseMsg').textContent='Saved ✓';setTimeout(()=>{$('dhirajCourseMsg').textContent=''},2000)}
+ function page(){try{const p=new URLSearchParams(location.search).get('page');return pages.includes(p)?p:'loginSection'}catch(e){return'loginSection'}}
+ function course(){try{return new URLSearchParams(location.search).get('course')||''}catch(e){return''}}
+ function url(p,c){const u=new URL(location.href);u.searchParams.set('page',p);if(p==='courseSection'&&c)u.searchParams.set('course',c);else u.searchParams.delete('course');try{history.pushState({page:p,course:c||''},'',u.pathname+'?'+u.searchParams.toString())}catch(e){}}
+ function hide(){['homeHero','homeMain'].forEach(id=>$(id)?.classList.add('hidden'));pages.forEach(id=>$(id)?.classList.add('hidden'))}
+ function render(p){hide();if(p==='accountSection'){$('accountSection')?.classList.remove('hidden');const e=$('accountEmail');if(e&&window.currentUser)e.textContent=window.currentUser.email||''}else if(p==='courseSection'){$('courseSection')?.classList.remove('hidden');const h=$('courseHeading');if(h&&course())h.textContent=course()}else $(p)?.classList.remove('hidden');const l=$('loginSection');l?.querySelectorAll('button').forEach(b=>{const t=(b.textContent||'').trim().toLowerCase();if(t.includes('back')||t.startsWith('←'))b.remove()});if(p==='accountSection'){const card=$('accountSection')?.querySelector('.card');if(card&&!card.querySelector('.dhirajAccountHome')){const b=document.createElement('button');b.className='blue dhirajAccountHome';b.textContent='← Home';b.style.marginBottom='16px';b.onclick=()=>{url('loginSection','');render('loginSection')};card.insertBefore(b,card.firstChild)}}window.scrollTo(0,0)}
+ function patch(){if(typeof window.show==='function'&&!window.__showFinal){const old=window.show;window.show=function(id){old(id);url(id,'');render(id)};window.__showFinal=true}if(typeof window.home==='function'&&!window.__homeFinal){const old=window.home;window.home=function(){old();url('loginSection','');render('loginSection')};window.__homeFinal=true}if(typeof window.openCourse==='function'&&!window.__courseFinal){const old=window.openCourse;window.openCourse=function(n){sessionStorage.setItem('dhiraj_course_name',n);old(n);url('courseSection',n);render('courseSection')};window.__courseFinal=true}}
+ function start(){patch();loadCourses();render(page());renderCourseControl();setInterval(()=>{patch();renderCourseControl();loadCourses()},1000)}
+ addEventListener('popstate',()=>{patch();render(page())});addEventListener('pageshow',()=>setTimeout(()=>{patch();render(page());loadCourses()},100));setTimeout(start,500);
 })();
