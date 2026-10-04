@@ -1,10 +1,10 @@
-/* Dhiraj B.Sc navigation v7 */
+/* Dhiraj B.Sc navigation v8 */
 (function(){
-  if(window.__dhirajNavigationV7)return;
-  window.__dhirajNavigationV7=true;
+  if(window.__dhirajNavigationV8)return;
+  window.__dhirajNavigationV8=true;
 
-  const PAGE='dhiraj_page_v7';
-  const COURSE='dhiraj_course_v7';
+  const PAGE='dhiraj_page_v8';
+  const COURSE='dhiraj_course_v8';
   const pages=['loginSection','signupSection','accountSection','courseSection','adminSection'];
 
   function get(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
@@ -58,9 +58,9 @@
     const s=document.getElementById('accountSection');
     if(!s)return;
     const card=s.querySelector('.card');
-    if(!card||card.querySelector('.dhiraj-home-v7'))return;
+    if(!card||card.querySelector('.dhiraj-home-v8'))return;
     const b=document.createElement('button');
-    b.type='button';b.className='blue dhiraj-home-v7';b.textContent='← Home';
+    b.type='button';b.className='blue dhiraj-home-v8';b.textContent='← Home';
     b.style.marginBottom='16px';
     b.onclick=function(){go('home')};
     card.insertBefore(b,card.firstChild);
@@ -76,37 +76,39 @@
   }
 
   function patchFunctions(){
-    if(typeof window.show==='function'&&!window.__showV7){
+    if(typeof window.show==='function'&&!window.__showV8){
       const original=window.show;
       window.show=function(id){original(id);go(id)};
-      window.__showV7=true;
+      window.__showV8=true;
     }
-    if(typeof window.home==='function'&&!window.__homeV7){
+    if(typeof window.home==='function'&&!window.__homeV8){
       const original=window.home;
       window.home=function(){original();go('home')};
-      window.__homeV7=true;
+      window.__homeV8=true;
     }
-    if(typeof window.openCourse==='function'&&!window.__courseV7){
+    if(typeof window.openCourse==='function'&&!window.__courseV8){
       const original=window.openCourse;
       window.openCourse=function(name){set(COURSE,name);original(name);go('courseSection')};
-      window.__courseV7=true;
+      window.__courseV8=true;
     }
   }
 
   function start(){
     patchFunctions();
-
-    // IMPORTANT: a normal navigation/direct URL visit starts at Login.
-    // Only an actual browser reload keeps the current page.
     const type=navType();
     const saved=get(PAGE);
 
-    if(type==='reload' && (saved==='accountSection'||saved==='courseSection'||saved==='adminSection'||saved==='signupSection'||saved==='loginSection'||saved==='home')){
+    if(type==='reload' && saved){
       render(saved,false);
+      // The original index.html currently calls home() after loadSession().
+      // Re-apply the saved page after that async initialization finishes.
+      const wanted=saved;
+      setTimeout(function(){
+        patchFunctions();
+        if(get(PAGE)===wanted)render(wanted,false);
+      },1200);
     }else{
-      // New/direct navigation: always start at Student Login.
-      del(PAGE);
-      del(COURSE);
+      del(PAGE);del(COURSE);
       render('loginSection',true);
       try{history.replaceState({page:'loginSection'},'',location.pathname)}catch(e){}
     }
