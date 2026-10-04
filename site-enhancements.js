@@ -38,7 +38,25 @@
   if(typeof window.home==='function'&&!window.__homeFinal){const old=window.home;window.home=function(){old();go('home');render('home')};window.__homeFinal=true}
   if(typeof window.openCourse==='function'&&!window.__courseFinal){const old=window.openCourse;window.openCourse=function(n){sessionStorage.setItem('dhiraj_course_name',n);old(n);go('courseSection',n);render('courseSection')};window.__courseFinal=true}
  }
- function start(){patch();loadCourses();render(getPage());renderCourseControl();setInterval(()=>{patch();renderCourseControl()},1000)}
+ function start(){
+  patch();
+  loadCourses();
+  render(getPage());
+  renderCourseControl();
+  if(typeof window.login==='function'&&!window.__loginFinal){
+   window.login=async function(){
+    const email=$('loginEmail')?.value.trim()||'',password=$('loginPassword')?.value||'';
+    if(!email||!password){alert('Email aur password bhariye.');return}
+    const r=await window.sb.auth.signInWithPassword({email,password});
+    if(r.error){alert(r.error.message);return}
+    await window.loadSession?.();
+    const u=new URL(location.href);u.searchParams.set('page','home');u.searchParams.delete('course');
+    location.replace(u.pathname+'?'+u.searchParams.toString());
+   };
+   window.__loginFinal=true;
+  }
+  setInterval(()=>{patch();renderCourseControl()},1000)
+ }
  addEventListener('popstate',()=>{patch();render(getPage())});
  addEventListener('pageshow',()=>setTimeout(()=>{patch();render(getPage());loadCourses()},100));
  setTimeout(start,500);
