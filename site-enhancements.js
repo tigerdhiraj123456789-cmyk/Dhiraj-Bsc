@@ -16,11 +16,9 @@ function addAccountHome(){const card=$('accountSection')?.querySelector('.card')
 function restore(){
  const p=page();
  if(p==='home'){
-   /* First visit: unauthenticated students see Login instead of Home. */
-   if(!window.currentUser){
-     if(typeof window.show==='function'){window.show('loginSection');setPage('loginSection','',true)}
-     return;
-   }
+   // An explicit ?page=home means the user is already on Home.
+   // Do not check window.currentUser here because currentUser is a
+   // top-level let in index.html and is not exposed as window.currentUser.
    if(typeof window.home==='function')window.home();
    return;
  }
