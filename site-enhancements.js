@@ -33,8 +33,8 @@ function restore(){
  if(p==='courseSection'){const q=u.searchParams.get('course');if(q&&$('courseHeading'))$('courseHeading').textContent=q}
  if(typeof window.show==='function')window.show(p)
 }
-function start(){restore();setTimeout(patch,50)}
-addEventListener('pageshow',function(){setTimeout(function(){restore();patch()},700)});
+function start(){restore();patch()}
+addEventListener('pageshow',function(){restore();patch()});
 addEventListener('popstate',function(){restore();patch()});
 setTimeout(start,500);
 })();
