@@ -14,16 +14,23 @@ function patch(){
 }
 function addAccountHome(){const card=$('accountSection')?.querySelector('.card');if(!card||card.querySelector('.dhirajNavHome'))return;const b=document.createElement('button');b.className='blue dhirajNavHome';b.textContent='← Home';b.style.marginBottom='16px';b.onclick=function(){setPage('home','');if(typeof window.home==='function')window.home()};card.insertBefore(b,card.firstChild)}
 function restore(){
+ const u=new URL(location.href);
+ const hasPage=u.searchParams.has('page');
  const p=page();
+ if(!hasPage){
+   if(window.__dhirajUser){
+     if(typeof window.home==='function')window.home();
+   }else{
+     if(typeof window.show==='function')window.show('loginSection');
+   }
+   return;
+ }
  if(p==='home'){
-   // An explicit ?page=home means the user is already on Home.
-   // Do not check window.currentUser here because currentUser is a
-   // top-level let in index.html and is not exposed as window.currentUser.
    if(typeof window.home==='function')window.home();
    return;
  }
  if(p==='accountSection')addAccountHome();
- if(p==='courseSection'){const q=new URLSearchParams(location.search).get('course');if(q&&$('courseHeading'))$('courseHeading').textContent=q}
+ if(p==='courseSection'){const q=u.searchParams.get('course');if(q&&$('courseHeading'))$('courseHeading').textContent=q}
  if(typeof window.show==='function')window.show(p)
 }
 function start(){restore();setTimeout(patch,50)}
