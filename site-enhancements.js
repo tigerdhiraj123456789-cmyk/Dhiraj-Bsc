@@ -28,8 +28,8 @@ function restore(){
  if(p==='courseSection'){const q=new URLSearchParams(location.search).get('course');if(q&&$('courseHeading'))$('courseHeading').textContent=q}
  if(typeof window.show==='function')window.show(p)
 }
-function start(){patch();setTimeout(restore,1200)}
-addEventListener('pageshow',function(){setTimeout(function(){patch();restore()},700)});
-addEventListener('popstate',function(){patch();restore()});
+function start(){restore();setTimeout(patch,50)}
+addEventListener('pageshow',function(){setTimeout(function(){restore();patch()},700)});
+addEventListener('popstate',function(){restore();patch()});
 setTimeout(start,500);
 })();
