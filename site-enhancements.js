@@ -36,5 +36,5 @@ function restore(){
 function start(){restore();patch()}
 addEventListener('pageshow',function(){restore();patch()});
 addEventListener('popstate',function(){restore();patch()});
-setTimeout(start,500);
+start();
 })();
